@@ -1,0 +1,7 @@
+interface:
+  display_name: "ace-tool-rs"
+  short_description: "Semantic codebase search via local ACE CLI"
+  default_prompt: "Use $ace-tool-rs to search this codebase semantically before editing."
+
+policy:
+  allow_implicit_invocation: true

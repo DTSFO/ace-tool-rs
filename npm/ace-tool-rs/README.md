@@ -1,6 +1,6 @@
 # ace-tool-rs
 
-MCP server for codebase indexing, semantic search, and prompt enhancement.
+CLI, assistant skill, and MCP server for codebase indexing, semantic search, and prompt enhancement.
 
 ## Installation
 
@@ -29,7 +29,12 @@ This package uses platform-specific optional dependencies to provide pre-built b
 ## Usage
 
 ```bash
-ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs --help
+ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN> --transport lsp
+ace-tool-rs index --project-root /path/to/project --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs search --project-root /path/to/project --query "Where is auth handled?" --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs enhance --prompt "Add request logging" --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs install-skill --agents codex,claude,pi
 ```
 
 ## Troubleshooting

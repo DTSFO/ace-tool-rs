@@ -1,7 +1,7 @@
 {
   "name": "ace-tool-rs",
   "version": "0.1.16",
-  "description": "MCP server for codebase indexing, semantic search, and prompt enhancement",
+  "description": "CLI, assistant skill, and MCP server for codebase indexing, semantic search, and prompt enhancement",
   "publishConfig": {
     "access": "public"
   },
@@ -17,6 +17,7 @@
   "homepage": "https://github.com/missdeer/ace-tool-rs#readme",
   "keywords": [
     "mcp",
+    "agent-skill",
     "codebase",
     "indexing",
     "semantic-search",

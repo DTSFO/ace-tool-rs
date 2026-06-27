@@ -2,15 +2,17 @@
 
 English | [简体中文](README-zh-CN.md)
 
-A high-performance MCP (Model Context Protocol) server for codebase indexing, semantic search, and prompt enhancement, written in Rust.
+A high-performance CLI, assistant skill, and MCP (Model Context Protocol) server for codebase indexing, semantic search, and prompt enhancement, written in Rust.
 
 ## Overview
 
-ace-tool-rs is a Rust implementation of a codebase context engine that enables AI assistants to search and understand codebases using natural language queries. It provides:
+ace-tool-rs is a Rust implementation of a codebase context engine that enables AI assistants and local workflows to search and understand codebases using natural language queries. It provides:
 
+- **First-class CLI workflows** - Index, search, enhance prompts, run MCP, and install local assistant skills
 - **Real-time codebase indexing** - Automatically indexes your project files and keeps the index up-to-date
 - **Semantic search** - Find relevant code using natural language descriptions
 - **Prompt enhancement** - Enhance user prompts with codebase context for clearer, more actionable requests
+- **Assistant skill distribution** - Bundled skill instructions for Codex, Claude, and Pi
 - **Multi-language support** - Works with 50+ programming languages and file types
 - **Incremental updates** - Uses mtime caching to skip unchanged files and only uploads new/modified content
 - **Parallel processing** - Multi-threaded file scanning and processing for faster indexing
@@ -18,6 +20,7 @@ ace-tool-rs is a Rust implementation of a codebase context engine that enables A
 
 ## Features
 
+- **CLI Subcommands** - `mcp`, `index`, `search`, `enhance`, and `install-skill`
 - **MCP Protocol Support** - Full JSON-RPC 2.0 implementation over stdio transport
 - **Adaptive Upload Strategy** - AIMD (Additive Increase, Multiplicative Decrease) algorithm dynamically adjusts concurrency and timeout based on runtime metrics
 - **Multi-encoding Support** - Handles UTF-8, GBK, GB18030, and Windows-1252 encoded files
@@ -32,7 +35,12 @@ ace-tool-rs is a Rust implementation of a codebase context engine that enables A
 The easiest way to install and run ace-tool-rs is via npx:
 
 ```bash
-npx ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
+npx ace-tool-rs --help
+npx ace-tool-rs search \
+  --project-root /path/to/project \
+  --query "Where is request authentication handled?" \
+  --base-url <API_URL> \
+  --token <AUTH_TOKEN>
 ```
 
 This will automatically download the appropriate binary for your platform and run it.
@@ -53,6 +61,10 @@ cd ace-tool-rs
 cargo build --release
 
 # The binary will be at target/release/ace-tool-rs
+./target/release/ace-tool-rs --help
+
+# Install the binary to ~/.local/bin and install the bundled skill
+scripts/install.sh target/release/ace-tool-rs
 ```
 
 ### Requirements
@@ -63,7 +75,30 @@ cargo build --release
 
 ## Usage
 
-### Command Line
+### CLI Subcommands
+
+```bash
+# Run the MCP server
+ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN> --transport lsp
+
+# Index a project and exit
+ace-tool-rs index --project-root /path/to/project --base-url <API_URL> --token <AUTH_TOKEN>
+
+# Search a project with natural language
+ace-tool-rs search \
+  --project-root /path/to/project \
+  --query "Where is the login flow implemented?" \
+  --base-url <API_URL> \
+  --token <AUTH_TOKEN>
+
+# Enhance a prompt and print the result
+ace-tool-rs enhance --prompt "Add audit logging to the upload flow" --base-url <API_URL> --token <AUTH_TOKEN>
+
+# Install the bundled skill for local agents
+ace-tool-rs install-skill --agents codex,claude,pi
+```
+
+Legacy MCP-compatible invocation is still supported:
 
 ```bash
 ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
@@ -85,7 +120,17 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 | `--index-only` | Index current directory and exit (no MCP server) |
 | `--enhance-prompt` | Enhance a prompt and output the result to stdout, then exit |
 | `--max-lines-per-blob` | Maximum lines per blob chunk (default: 800) |
-| `--retrieval-timeout` | Search retrieval timeout in seconds (default: 180) |
+| `--retrieval-timeout` | Search retrieval timeout in seconds (default: 60) |
+
+Subcommand-specific arguments:
+
+| Argument | Description |
+|----------|-------------|
+| `mcp` | Run the MCP server over stdio |
+| `index --project-root <path>` | Index a project and exit |
+| `search --project-root <path> --query <text>` | Search indexed project context and print results |
+| `enhance --prompt <text> [--conversation-history <text>]` | Enhance a prompt and print the result |
+| `install-skill --agents codex,claude,pi [--force]` | Install `skills/ace-tool-rs` into local agent skill directories |
 
 ### Environment Variables
 
@@ -103,7 +148,7 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 
 ```bash
 # Run with debug logging
-RUST_LOG=debug ace-tool-rs --base-url https://api.example.com --token your-token-here
+RUST_LOG=debug ace-tool-rs mcp --base-url https://api.example.com --token your-token-here
 ```
 
 ### Transport Framing
@@ -112,8 +157,35 @@ By default, the server auto-detects line-delimited JSON vs. LSP `Content-Length`
 If your client requires a specific mode, force it:
 
 ```bash
-ace-tool-rs --base-url https://api.example.com --token your-token-here --transport lsp
+ace-tool-rs mcp --base-url https://api.example.com --token your-token-here --transport lsp
 ```
+
+## Assistant Skill Installation
+
+The repository includes a lightweight agent skill in `skills/ace-tool-rs`.
+After building or installing the CLI, install it locally:
+
+```bash
+ace-tool-rs install-skill --agents codex,claude,pi
+```
+
+By default this installs to:
+
+| Agent | Target directory |
+|-------|------------------|
+| Codex | `~/.codex/skills/ace-tool-rs` |
+| Claude | `~/.claude/skills/ace-tool-rs` |
+| Pi | `~/.pi/agent/skills/ace-tool-rs` |
+
+If the target skill already exists, rerun with `--force` to replace only the
+`ace-tool-rs` skill directory:
+
+```bash
+ace-tool-rs install-skill --agents codex,claude,pi --force
+```
+
+The skill never stores API credentials. Provide credentials at runtime through
+CLI flags, environment variables, or your own secret manager.
 
 ## MCP Integration
 
@@ -124,7 +196,7 @@ Add to your Codex config file (typically `~/.codex/config.toml`):
 ```toml
 [mcp_servers.ace-tool]
 command = "npx"
-args = ["ace-tool-rs", "--base-url", "https://api.example.com", "--token", "your-token-here", "--transport", "lsp"]
+args = ["ace-tool-rs", "mcp", "--base-url", "https://api.example.com", "--token", "your-token-here", "--transport", "lsp"]
 env = { RUST_LOG = "info" }
 startup_timeout_ms = 60000
 ```
@@ -143,6 +215,7 @@ Add to your Claude Desktop configuration file:
       "command": "npx",
       "args": [
         "ace-tool-rs",
+        "mcp",
         "--base-url", "https://api.example.com",
         "--token", "your-token-here"
       ]
@@ -162,6 +235,7 @@ For OpenCode or similar agent-style clients, the smoothest setup is usually to d
       "command": "npx",
       "args": [
         "ace-tool-rs",
+        "mcp",
         "--base-url", "https://api.example.com",
         "--token", "your-token-here",
         "--no-webbrowser-enhance-prompt"
@@ -186,7 +260,7 @@ If you prefer manual review in a browser, omit `--no-webbrowser-enhance-prompt` 
 Run command like below:
 
 ```bash
-claude mcp add-json ace-tool --scope user '{"type":"stdio","command":"npx","args":["ace-tool-rs","--base-url","https://api.example.com/","--token","your-token-here"],"env":{}}'
+claude mcp add-json ace-tool --scope user '{"type":"stdio","command":"npx","args":["ace-tool-rs","mcp","--base-url","https://api.example.com/","--token","your-token-here"],"env":{}}'
 ```
 
 Modify `~/.claude/settings.json` to add permission for the tools:
@@ -282,21 +356,21 @@ The tool supports multiple backend endpoints, controlled by the `PROMPT_ENHANCER
 export PROMPT_ENHANCER_ENDPOINT=claude
 export PROMPT_ENHANCER_BASE_URL=https://api.anthropic.com
 export PROMPT_ENHANCER_TOKEN=your-anthropic-api-key
-ace-tool-rs --base-url https://api.example.com --token your-token
+ace-tool-rs mcp --base-url https://api.example.com --token your-token
 
-# For --enhance-prompt mode with third-party endpoints, --base-url and --token are optional
+# For one-shot enhance mode with third-party endpoints, --base-url and --token are optional
 export PROMPT_ENHANCER_ENDPOINT=claude
 export PROMPT_ENHANCER_BASE_URL=https://api.anthropic.com
 export PROMPT_ENHANCER_TOKEN=your-anthropic-api-key
-ace-tool-rs --enhance-prompt "Add user authentication"
+ace-tool-rs enhance --prompt "Add user authentication"
 
 # If you also want to inject search_context before third-party enhancement,
 # you must additionally provide ACE search credentials via --base-url/--token
 export PROMPT_ENHANCER_INCLUDE_SEARCH_CONTEXT=1
-ace-tool-rs \
+ace-tool-rs enhance \
+  --prompt "Add user authentication" \
   --base-url https://api.example.com \
-  --token your-ace-token \
-  --enhance-prompt "Add user authentication"
+  --token your-ace-token
 ```
 
 **Example using Codex API:**
@@ -307,7 +381,7 @@ export PROMPT_ENHANCER_ENDPOINT=codex
 export PROMPT_ENHANCER_BASE_URL=https://api.openai.com
 export PROMPT_ENHANCER_TOKEN=your-openai-api-key
 # Optional: export PROMPT_ENHANCER_MODEL=codex-mini
-ace-tool-rs --enhance-prompt "Refactor authentication logic"
+ace-tool-rs enhance --prompt "Refactor authentication logic"
 ```
 
 **Using `search_context` with third-party enhancement:**
@@ -315,7 +389,7 @@ ace-tool-rs --enhance-prompt "Refactor authentication logic"
 - Applies only to `claude` / `openai` / `gemini` / `codex`
 - Requires `PROMPT_ENHANCER_INCLUDE_SEARCH_CONTEXT=1`
 - In MCP server mode, `--base-url` and `--token` are already required
-- In one-shot `--enhance-prompt` mode, enabling this feature also requires `--base-url` and `--token`
+- In one-shot `enhance` / `--enhance-prompt` mode, enabling this feature also requires `--base-url` and `--token`
 - When explicitly enabled, search failures are returned as real errors instead of silently falling back to plain enhancement
 
 ## Supported File Types
@@ -442,13 +516,13 @@ You can override individual parameters while keeping others adaptive:
 
 ```bash
 # Fixed concurrency, adaptive timeout
-ace-tool-rs --base-url ... --token ... --upload-concurrency 4
+ace-tool-rs index --project-root . --base-url ... --token ... --upload-concurrency 4
 
 # Fixed timeout, adaptive concurrency
-ace-tool-rs --base-url ... --token ... --upload-timeout 60
+ace-tool-rs index --project-root . --base-url ... --token ... --upload-timeout 60
 
 # Disable adaptive entirely (use static heuristic)
-ace-tool-rs --base-url ... --token ... --no-adaptive
+ace-tool-rs index --project-root . --base-url ... --token ... --no-adaptive
 ```
 
 ## Project Scale Strategies

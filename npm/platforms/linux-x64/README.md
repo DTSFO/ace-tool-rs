@@ -9,7 +9,7 @@ This package contains the pre-built binary for Linux x64. It is automatically in
 **Do not install this package directly.** Instead, use:
 
 ```bash
-npx ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
+npx ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN>
 ```
 
 ## Supported Platforms

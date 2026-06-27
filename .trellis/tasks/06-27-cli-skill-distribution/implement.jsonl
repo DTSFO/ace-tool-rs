@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Owns placement of CLI, tools, packaging, and scripts changes."}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Defines CLI validation, MCP error, and tool error boundaries."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Defines stdout/stderr and secret handling requirements."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Defines verification commands and test placement for Rust/npm changes."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "The task spans CLI, tools, packaging, install, docs, and local skill consumers."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "The CLI refactor should reuse existing tool/index/enhancer paths instead of duplicating logic."}

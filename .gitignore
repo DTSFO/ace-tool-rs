@@ -1,2 +1,38 @@
+# Rust build output
+target/
+
+# Local ACE runtime state
 .ace-tool/
-target
+
+# Local binaries and release staging
+/ace-tool-rs
+/ace-tool-rs.exe
+bin/
+dist/
+build/
+
+# Node/npm local state
+node_modules/
+npm/**/node_modules/
+
+# Logs and temporary files
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+.tmp/
+.cache/
+
+# Local secrets and environment overrides
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

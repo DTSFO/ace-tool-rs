@@ -13,6 +13,25 @@ const PLATFORMS = {
   "win32-arm64": "@ace-tool-rs/win32-arm64",
 };
 
+function getLocalBuildBinaryPath() {
+  const binName = process.platform === "win32" ? "ace-tool-rs.exe" : "ace-tool-rs";
+  const candidates = [
+    path.join(__dirname, "..", "..", "target", "release", binName),
+    path.join(__dirname, "..", "..", "target", "debug", binName),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      require("fs").accessSync(candidate);
+      return candidate;
+    } catch (e) {
+      // Keep looking; this fallback is only for source checkouts.
+    }
+  }
+
+  return null;
+}
+
 function getBinaryPath() {
   const platformKey = `${process.platform}-${process.arch}`;
   const pkgName = PLATFORMS[platformKey];
@@ -28,6 +47,11 @@ function getBinaryPath() {
     const binName = process.platform === "win32" ? "ace-tool-rs.exe" : "ace-tool-rs";
     return path.join(path.dirname(pkgPath), "bin", binName);
   } catch (e) {
+    const localBinaryPath = getLocalBuildBinaryPath();
+    if (localBinaryPath) {
+      return localBinaryPath;
+    }
+
     console.error(`Failed to find platform package: ${pkgName}`);
     console.error("This may happen if npm failed to install the optional dependency.");
     console.error("");

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Check that CLI and tool failures preserve the intended boundaries."}
+{"file": ".trellis/spec/backend/logging-guidelines.md", "reason": "Check that MCP mode and npm wrappers keep stdout clean and secrets masked."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Check required formatting, clippy, tests, and npm wrapper validation."}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Check consistency across CLI, docs, installer, and skill consumers."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Check that new command handlers reuse existing modules and avoid duplicated contracts."}
