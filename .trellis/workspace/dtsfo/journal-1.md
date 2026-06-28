@@ -37,3 +37,36 @@ Converted the fork to a CLI plus bundled assistant skill distribution, installed
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: Fix CLI/MCP edge cases
+
+**Date**: 2026-06-28
+**Task**: Fix CLI/MCP edge cases
+**Branch**: `master`
+
+### Summary
+
+Validated index project roots before side effects, made MCP prompt enhancement default to no-browser responses, updated docs and skill guidance, installed the rebuilt CLI and skills, and pushed changes.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `63d2986` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
