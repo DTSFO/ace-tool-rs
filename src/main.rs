@@ -8,6 +8,7 @@ use ace_tool::service::get_third_party_config;
 use ace_tool::tools::search_context::{SearchContextArgs, SearchContextTool};
 use anyhow::{anyhow, Context, Result};
 use clap::{Args as ClapArgs, Parser, Subcommand, ValueEnum};
+use serde::Deserialize;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -16,6 +17,19 @@ use tracing::{error, info, warn};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 const REPO_SKILL_PATH: &str = "skills/ace-tool-rs";
+const DEFAULT_CONFIG_RELATIVE_PATH: &str = "ace-tool-rs/config.toml";
+
+#[derive(Debug, Clone, Default, Deserialize)]
+struct FileConfig {
+    base_url: Option<String>,
+    token: Option<String>,
+}
+
+#[derive(Debug, Clone, Default)]
+struct AceCredentials {
+    base_url: Option<String>,
+    token: Option<String>,
+}
 
 #[derive(ValueEnum, Debug, Copy, Clone, Eq, PartialEq, Default)]
 enum TransportArg {
@@ -34,6 +48,10 @@ enum AgentTarget {
 
 #[derive(ClapArgs, Debug, Clone, Default)]
 struct AceConfigArgs {
+    /// Path to config file (default: ~/.config/ace-tool-rs/config.toml)
+    #[arg(long)]
+    config: Option<PathBuf>,
+
     /// API base URL for the indexing service
     #[arg(long)]
     base_url: Option<String>,
@@ -65,7 +83,8 @@ struct AceConfigArgs {
 
 impl AceConfigArgs {
     fn has_values(&self) -> bool {
-        self.base_url.is_some()
+        self.config.is_some()
+            || self.base_url.is_some()
             || self.token.is_some()
             || self.max_lines_per_blob.is_some()
             || self.upload_timeout.is_some()
@@ -431,14 +450,13 @@ fn new_required_ace_config(
     ace_args: &AceConfigArgs,
     prompt_ui_args: &PromptUiArgs,
 ) -> Result<Arc<Config>> {
-    let base_url = ace_args
+    let credentials = resolve_ace_credentials(ace_args)?;
+    let base_url = credentials
         .base_url
-        .clone()
-        .ok_or_else(|| anyhow!("--base-url is required"))?;
-    let token = ace_args
+        .ok_or_else(|| anyhow!("--base-url, config base_url, or ACE_BASE_URL is required"))?;
+    let token = credentials
         .token
-        .clone()
-        .ok_or_else(|| anyhow!("--token is required"))?;
+        .ok_or_else(|| anyhow!("--token, config token, or ACE_TOKEN is required"))?;
 
     Config::new(base_url, token, config_options(ace_args, prompt_ui_args))
 }
@@ -452,8 +470,9 @@ fn new_enhance_config(
         let _ = get_third_party_config(endpoint)
             .map_err(|e| anyhow!("Third-party endpoint configuration error: {}", e))?;
         info!("Using third-party endpoint: {}", endpoint);
+        let credentials = resolve_ace_credentials(ace_args)?;
 
-        return match (ace_args.base_url.clone(), ace_args.token.clone()) {
+        return match (credentials.base_url, credentials.token) {
             (Some(base_url), Some(token)) => {
                 info!("Using CLI base_url/token to enable ACE search features");
                 Config::new(base_url, token, config_options(ace_args, prompt_ui_args))
@@ -465,16 +484,71 @@ fn new_enhance_config(
         };
     }
 
-    let base_url = ace_args
+    let credentials = resolve_ace_credentials(ace_args)?;
+    let base_url = credentials
         .base_url
-        .clone()
         .ok_or_else(|| anyhow!("--base-url is required for '{}' endpoint", endpoint))?;
-    let token = ace_args
+    let token = credentials
         .token
-        .clone()
         .ok_or_else(|| anyhow!("--token is required for '{}' endpoint", endpoint))?;
 
     Config::new(base_url, token, config_options(ace_args, prompt_ui_args))
+}
+
+fn resolve_ace_credentials(ace_args: &AceConfigArgs) -> Result<AceCredentials> {
+    let file_config = load_file_config(ace_args.config.as_deref())?;
+
+    Ok(AceCredentials {
+        base_url: first_non_empty([
+            ace_args.base_url.clone(),
+            file_config.base_url,
+            env::var("ACE_BASE_URL").ok(),
+        ]),
+        token: first_non_empty([
+            ace_args.token.clone(),
+            file_config.token,
+            env::var("ACE_TOKEN").ok(),
+        ]),
+    })
+}
+
+fn first_non_empty(values: [Option<String>; 3]) -> Option<String> {
+    values
+        .into_iter()
+        .flatten()
+        .map(|value| value.trim().to_string())
+        .find(|value| !value.is_empty())
+}
+
+fn load_file_config(config_path: Option<&Path>) -> Result<FileConfig> {
+    let Some(path) = resolve_config_path(config_path)? else {
+        return Ok(FileConfig::default());
+    };
+
+    if !path.exists() {
+        return Ok(FileConfig::default());
+    }
+
+    let content =
+        fs::read_to_string(&path).with_context(|| format!("failed to read {}", path.display()))?;
+    toml::from_str(&content).with_context(|| format!("failed to parse {}", path.display()))
+}
+
+fn resolve_config_path(config_path: Option<&Path>) -> Result<Option<PathBuf>> {
+    if let Some(path) = config_path {
+        return Ok(Some(path.to_path_buf()));
+    }
+
+    if let Some(config_home) = env::var_os("XDG_CONFIG_HOME").filter(|value| !value.is_empty()) {
+        return Ok(Some(
+            PathBuf::from(config_home).join(DEFAULT_CONFIG_RELATIVE_PATH),
+        ));
+    }
+
+    Ok(env::var_os("HOME")
+        .filter(|value| !value.is_empty())
+        .map(PathBuf::from)
+        .map(|home| home.join(".config").join(DEFAULT_CONFIG_RELATIVE_PATH)))
 }
 
 fn config_options(ace_args: &AceConfigArgs, prompt_ui_args: &PromptUiArgs) -> ConfigOptions {
@@ -659,6 +733,86 @@ mod tests {
     fn command_reports_package_version() {
         let command = Args::command();
         assert_eq!(command.get_version(), Some(env!("CARGO_PKG_VERSION")));
+    }
+
+    #[test]
+    fn resolves_credentials_from_config_file() {
+        let temp = TempDir::new().unwrap();
+        let config_path = temp.path().join("config.toml");
+        fs::write(
+            &config_path,
+            r#"
+base_url = "https://config.example.com/"
+token = "config-token"
+"#,
+        )
+        .unwrap();
+
+        let credentials = resolve_ace_credentials(&AceConfigArgs {
+            config: Some(config_path),
+            ..AceConfigArgs::default()
+        })
+        .unwrap();
+
+        assert_eq!(
+            credentials.base_url.as_deref(),
+            Some("https://config.example.com/")
+        );
+        assert_eq!(credentials.token.as_deref(), Some("config-token"));
+    }
+
+    #[test]
+    fn cli_credentials_override_config_file() {
+        let temp = TempDir::new().unwrap();
+        let config_path = temp.path().join("config.toml");
+        fs::write(
+            &config_path,
+            r#"
+base_url = "https://config.example.com/"
+token = "config-token"
+"#,
+        )
+        .unwrap();
+
+        let credentials = resolve_ace_credentials(&AceConfigArgs {
+            config: Some(config_path),
+            base_url: Some("https://cli.example.com/".to_string()),
+            token: Some("cli-token".to_string()),
+            ..AceConfigArgs::default()
+        })
+        .unwrap();
+
+        assert_eq!(
+            credentials.base_url.as_deref(),
+            Some("https://cli.example.com/")
+        );
+        assert_eq!(credentials.token.as_deref(), Some("cli-token"));
+    }
+
+    #[test]
+    fn parses_search_subcommand_with_config_path() {
+        let args = Args::try_parse_from([
+            "ace-tool-rs",
+            "search",
+            "--config",
+            "/tmp/ace-config.toml",
+            "--project-root",
+            "/tmp/project",
+            "--query",
+            "find auth flow",
+        ])
+        .unwrap();
+
+        match args.command {
+            Some(Commands::Search(command)) => {
+                assert_eq!(
+                    command.ace.config.as_deref(),
+                    Some(Path::new("/tmp/ace-config.toml"))
+                );
+                assert_eq!(command.query, "find auth flow");
+            }
+            _ => panic!("expected search command"),
+        }
     }
 
     #[test]

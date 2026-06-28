@@ -75,24 +75,37 @@ scripts/install.sh target/release/ace-tool-rs
 
 ## Usage
 
+### Configuration File
+
+ACE credentials can be stored in a user config file instead of passing them on
+every command:
+
+```toml
+# ~/.config/ace-tool-rs/config.toml
+base_url = "https://api.example.com/"
+token = "your-token-here"
+```
+
+The lookup order is: CLI flags, config file, then `ACE_BASE_URL` / `ACE_TOKEN`
+environment variables for backward compatibility. Use `--config <path>` to load
+a different config file.
+
 ### CLI Subcommands
 
 ```bash
 # Run the MCP server
-ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN> --transport lsp
+ace-tool-rs mcp --transport lsp
 
 # Index a project and exit
-ace-tool-rs index --project-root /path/to/project --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs index --project-root /path/to/project
 
 # Search a project with natural language
 ace-tool-rs search \
   --project-root /path/to/project \
-  --query "Where is the login flow implemented?" \
-  --base-url <API_URL> \
-  --token <AUTH_TOKEN>
+  --query "Where is the login flow implemented?"
 
 # Enhance a prompt and print the result
-ace-tool-rs enhance --prompt "Add audit logging to the upload flow" --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs enhance --prompt "Add audit logging to the upload flow"
 
 # Install the bundled skill for local agents
 ace-tool-rs install-skill --agents codex,claude,pi
@@ -108,6 +121,7 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 
 | Argument | Description |
 |----------|-------------|
+| `--config` | Config file path (default: `~/.config/ace-tool-rs/config.toml`) |
 | `--base-url` | API base URL for the indexing service (optional for `--enhance-prompt` with third-party endpoints) |
 | `--token` | Authentication token for API access (optional for `--enhance-prompt` with third-party endpoints) |
 | `--transport` | Transport framing: `auto` (default), `lsp`, `line` |

@@ -29,10 +29,19 @@ Check the CLI:
 ace-tool-rs --help
 ```
 
+The CLI normally reads ACE credentials from:
+
+```text
+~/.config/ace-tool-rs/config.toml
+```
+
+Use `--base-url` and `--token` only when you need to override that config for a
+single command.
+
 Index a project:
 
 ```bash
-ace-tool-rs index --project-root "$PWD" --base-url "$ACE_BASE_URL" --token "$ACE_TOKEN"
+ace-tool-rs index --project-root "$PWD"
 ```
 
 Search a project:
@@ -40,9 +49,7 @@ Search a project:
 ```bash
 ace-tool-rs search \
   --project-root "$PWD" \
-  --query "Where is the authentication flow implemented?" \
-  --base-url "$ACE_BASE_URL" \
-  --token "$ACE_TOKEN"
+  --query "Where is the authentication flow implemented?"
 ```
 
 Enhance a prompt:
@@ -50,15 +57,13 @@ Enhance a prompt:
 ```bash
 ace-tool-rs enhance \
   --prompt "Add a login page" \
-  --conversation-history "User: initial request" \
-  --base-url "$ACE_BASE_URL" \
-  --token "$ACE_TOKEN"
+  --conversation-history "User: initial request"
 ```
 
 Run as an MCP server when an MCP client is configured:
 
 ```bash
-ace-tool-rs mcp --base-url "$ACE_BASE_URL" --token "$ACE_TOKEN" --transport lsp
+ace-tool-rs mcp --transport lsp
 ```
 
 ## Query Guidance
@@ -77,7 +82,7 @@ rg "function_name"
 
 ## Safety Rules
 
-- Do not print, commit, or store tokens. Prefer environment variables or user-owned secret storage.
+- Do not print or commit tokens. Keep config files in user-owned secret storage.
 - Do not add real credentials to docs, examples, tests, task notes, or shell history files.
 - Treat `.ace-tool/` as local runtime state.
 - If `ace-tool-rs search` returns an error, report the exact error and fall back to ordinary repository inspection.

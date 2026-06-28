@@ -75,24 +75,35 @@ scripts/install.sh target/release/ace-tool-rs
 
 ## 使用方法
 
+### 配置文件
+
+ACE 凭据可以放在用户配置文件里，不必每次命令都传：
+
+```toml
+# ~/.config/ace-tool-rs/config.toml
+base_url = "https://api.example.com/"
+token = "your-token-here"
+```
+
+读取优先级是：CLI 参数、配置文件、最后为了兼容旧用法读取
+`ACE_BASE_URL` / `ACE_TOKEN` 环境变量。可以用 `--config <path>` 指定其他配置文件。
+
 ### CLI 子命令
 
 ```bash
 # 运行 MCP 服务器
-ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN> --transport lsp
+ace-tool-rs mcp --transport lsp
 
 # 索引项目并退出
-ace-tool-rs index --project-root /path/to/project --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs index --project-root /path/to/project
 
 # 使用自然语言搜索项目
 ace-tool-rs search \
   --project-root /path/to/project \
-  --query "登录流程在哪里实现？" \
-  --base-url <API_URL> \
-  --token <AUTH_TOKEN>
+  --query "登录流程在哪里实现？"
 
 # 增强提示词并输出结果
-ace-tool-rs enhance --prompt "给上传流程增加审计日志" --base-url <API_URL> --token <AUTH_TOKEN>
+ace-tool-rs enhance --prompt "给上传流程增加审计日志"
 
 # 为本机助手安装内置 skill
 ace-tool-rs install-skill --agents codex,claude,pi
@@ -108,6 +119,7 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 
 | 参数 | 描述 |
 |------|------|
+| `--config` | 配置文件路径（默认：`~/.config/ace-tool-rs/config.toml`） |
 | `--base-url` | 索引服务的 API 基础 URL（使用第三方端点的 `--enhance-prompt` 模式时可选） |
 | `--token` | API 访问的认证令牌（使用第三方端点的 `--enhance-prompt` 模式时可选） |
 | `--transport` | 传输帧格式：`auto`（默认）、`lsp`、`line` |

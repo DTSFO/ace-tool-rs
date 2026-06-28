@@ -30,10 +30,12 @@ This package uses platform-specific optional dependencies to provide pre-built b
 
 ```bash
 ace-tool-rs --help
-ace-tool-rs mcp --base-url <API_URL> --token <AUTH_TOKEN> --transport lsp
-ace-tool-rs index --project-root /path/to/project --base-url <API_URL> --token <AUTH_TOKEN>
-ace-tool-rs search --project-root /path/to/project --query "Where is auth handled?" --base-url <API_URL> --token <AUTH_TOKEN>
-ace-tool-rs enhance --prompt "Add request logging" --base-url <API_URL> --token <AUTH_TOKEN>
+mkdir -p ~/.config/ace-tool-rs
+$EDITOR ~/.config/ace-tool-rs/config.toml
+ace-tool-rs mcp --transport lsp
+ace-tool-rs index --project-root /path/to/project
+ace-tool-rs search --project-root /path/to/project --query "Where is auth handled?"
+ace-tool-rs enhance --prompt "Add request logging"
 ace-tool-rs install-skill --agents codex,claude,pi
 ```
 

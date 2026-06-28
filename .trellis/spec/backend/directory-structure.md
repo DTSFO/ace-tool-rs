@@ -128,10 +128,10 @@ Keep packaging version fields aligned with `Cargo.toml` and README examples when
 
 ### 2. Signatures
 
-- `ace-tool-rs mcp --base-url <url> --token <token> [--transport auto|lsp|line] [config flags...]`
-- `ace-tool-rs index [--project-root <path>] --base-url <url> --token <token> [config flags...]`
-- `ace-tool-rs search [--project-root <path>] --query <text> --base-url <url> --token <token> [config flags...]`
-- `ace-tool-rs enhance --prompt <text> [--conversation-history <text>] [--project-root <path>] [ACE config flags...] [prompt UI flags...]`
+- `ace-tool-rs mcp [--config <path>] [--base-url <url>] [--token <token>] [--transport auto|lsp|line] [config flags...]`
+- `ace-tool-rs index [--config <path>] [--project-root <path>] [--base-url <url>] [--token <token>] [config flags...]`
+- `ace-tool-rs search [--config <path>] [--project-root <path>] --query <text> [--base-url <url>] [--token <token>] [config flags...]`
+- `ace-tool-rs enhance [--config <path>] --prompt <text> [--conversation-history <text>] [--project-root <path>] [ACE config flags...] [prompt UI flags...]`
 - `ace-tool-rs install-skill [--agents codex,claude,pi] [--source <dir>] [--force]`
 - Legacy: `ace-tool-rs --base-url <url> --token <token> [--index-only] [--enhance-prompt <text>] [--transport ...]`
 
@@ -143,11 +143,14 @@ Keep packaging version fields aligned with `Cargo.toml` and README examples when
 - `enhance` prints only the enhanced prompt to stdout.
 - `install-skill` copies the source skill directory into `~/.codex/skills/ace-tool-rs`, `~/.claude/skills/ace-tool-rs`, and `~/.pi/agent/skills/ace-tool-rs` for the selected agents.
 - `skills/ace-tool-rs` is source-controlled. Installed copies under user home are generated local state and must not be committed.
+- ACE credentials resolve in this order: CLI flags, TOML config file, then `ACE_BASE_URL` / `ACE_TOKEN` environment variables for backward compatibility.
+- Default config path is `~/.config/ace-tool-rs/config.toml`, or `$XDG_CONFIG_HOME/ace-tool-rs/config.toml` when `XDG_CONFIG_HOME` is set. The file currently supports `base_url` and `token`.
 
 ### 4. Validation & Error Matrix
 
-- Missing `--base-url` in MCP, index, or search mode -> `--base-url is required`.
-- Missing `--token` in MCP, index, or search mode -> `--token is required`.
+- Missing base URL in MCP, index, or search mode after CLI/config/env resolution -> base URL required error.
+- Missing token in MCP, index, or search mode after CLI/config/env resolution -> token required error.
+- Malformed TOML config -> parse error including the config path, never the token value.
 - Third-party enhance mode with only one of `--base-url` / `--token` -> paired-argument error.
 - Subcommand plus legacy top-level flags -> reject; users must place options after the subcommand.
 - `install-skill` target exists without `--force` -> refuse to overwrite that skill directory.
@@ -164,6 +167,8 @@ Keep packaging version fields aligned with `Cargo.toml` and README examples when
 - Clap help contains `mcp`, `index`, `search`, `enhance`, and `install-skill`.
 - Legacy `--index-only` still parses with top-level `--base-url` / `--token`.
 - `search` parses `--project-root` and `--query`.
+- `search` parses `--config`, and credentials load from that TOML file when CLI flags are absent.
+- CLI `--base-url` / `--token` override values from the TOML file.
 - `install-skill` default agents are Codex, Claude, and Pi.
 - Skill installation refuses an existing target without `--force` and replaces only that target with `--force`.
 - Wrapper check: `node npm/ace-tool-rs/run.js --help` succeeds from a source checkout where platform optional packages are absent.
