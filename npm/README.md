@@ -14,12 +14,16 @@ This is a **shim package** that automatically downloads the appropriate pre-buil
 ```bash
 # Run directly with npx (no installation needed)
 npx ace-tool-rs --help
-npx ace-tool-rs mcp --config ~/.config/ace-tool-rs/config.toml
+npx ace-tool-rs mcp --config ~/.config/ace-tool-rs/config.toml --no-webbrowser-enhance-prompt
 
 # Or install globally
 npm install -g ace-tool-rs
 ace-tool-rs search --project-root /path/to/project --query "Where is auth handled?"
 ```
+
+`index` requires an existing project directory. For valid projects it writes
+`.ace-tool/` and may update the root `.gitignore`. Treat semantic search output
+as locator guidance and verify exact implementation details in local files.
 
 ## Supported Platforms
 

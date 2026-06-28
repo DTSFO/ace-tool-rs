@@ -32,12 +32,16 @@ This package uses platform-specific optional dependencies to provide pre-built b
 ace-tool-rs --help
 mkdir -p ~/.config/ace-tool-rs
 $EDITOR ~/.config/ace-tool-rs/config.toml
-ace-tool-rs mcp --transport lsp
+ace-tool-rs mcp --transport lsp --no-webbrowser-enhance-prompt
 ace-tool-rs index --project-root /path/to/project
 ace-tool-rs search --project-root /path/to/project --query "Where is auth handled?"
 ace-tool-rs enhance --prompt "Add request logging"
 ace-tool-rs install-skill --agents codex,claude,pi
 ```
+
+`index` requires an existing project directory. For valid projects it writes
+`.ace-tool/` and may update the root `.gitignore`. Treat semantic search output
+as locator guidance and verify exact implementation details in local files.
 
 ## Troubleshooting
 

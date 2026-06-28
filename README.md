@@ -93,8 +93,8 @@ a different config file.
 ### CLI Subcommands
 
 ```bash
-# Run the MCP server
-ace-tool-rs mcp --transport lsp
+# Run the MCP server. In MCP mode, enhance_prompt defaults to no browser UI.
+ace-tool-rs mcp --transport lsp --no-webbrowser-enhance-prompt
 
 # Index a project and exit
 ace-tool-rs index --project-root /path/to/project
@@ -145,6 +145,12 @@ Subcommand-specific arguments:
 | `search --project-root <path> --query <text>` | Search indexed project context and print results |
 | `enhance --prompt <text> [--conversation-history <text>]` | Enhance a prompt and print the result |
 | `install-skill --agents codex,claude,pi [--force]` | Install `skills/ace-tool-rs` into local agent skill directories |
+
+### Operational Notes
+
+- `index` requires an existing project directory. For a valid project, it writes local runtime state under `.ace-tool/` and may update the project root `.gitignore` so that state is ignored.
+- `search` and `search_context` results are locator hints from retrieval output. Before editing or citing exact implementation details, verify the relevant code in local files.
+- MCP server mode defaults `enhance_prompt` to direct no-browser responses when no prompt UI flags are supplied. One-shot `enhance` keeps the browser review flow unless `--no-webbrowser-enhance-prompt` is passed.
 
 ### Environment Variables
 
@@ -210,7 +216,7 @@ Add to your Codex config file (typically `~/.codex/config.toml`):
 ```toml
 [mcp_servers.ace-tool]
 command = "npx"
-args = ["ace-tool-rs", "mcp", "--base-url", "https://api.example.com", "--token", "your-token-here", "--transport", "lsp"]
+args = ["ace-tool-rs", "mcp", "--base-url", "https://api.example.com", "--token", "your-token-here", "--transport", "lsp", "--no-webbrowser-enhance-prompt"]
 env = { RUST_LOG = "info" }
 startup_timeout_ms = 60000
 ```
@@ -231,7 +237,8 @@ Add to your Claude Desktop configuration file:
         "ace-tool-rs",
         "mcp",
         "--base-url", "https://api.example.com",
-        "--token", "your-token-here"
+        "--token", "your-token-here",
+        "--no-webbrowser-enhance-prompt"
       ]
     }
   }
@@ -267,14 +274,14 @@ Recommended workflow in OpenCode:
 2. Let the tool return the enhanced result directly.
 3. Have the agent use that returned text as the next implementation prompt.
 
-If you prefer manual review in a browser, omit `--no-webbrowser-enhance-prompt` and complete the Web UI step before expecting the MCP call to finish.
+If you prefer manual review in a browser for MCP calls, pass an explicit prompt UI option such as `--webui-addr 127.0.0.1:8754` and complete the Web UI step before expecting the MCP call to finish.
 
 ### Claude Code
 
 Run command like below:
 
 ```bash
-claude mcp add-json ace-tool --scope user '{"type":"stdio","command":"npx","args":["ace-tool-rs","mcp","--base-url","https://api.example.com/","--token","your-token-here"],"env":{}}'
+claude mcp add-json ace-tool --scope user '{"type":"stdio","command":"npx","args":["ace-tool-rs","mcp","--base-url","https://api.example.com/","--token","your-token-here","--no-webbrowser-enhance-prompt"],"env":{}}'
 ```
 
 Modify `~/.claude/settings.json` to add permission for the tools:
@@ -297,6 +304,9 @@ $ cat settings.local.json
 
 Search the codebase using natural language queries.
 
+Search output should be treated as navigation guidance. Confirm exact code,
+line numbers, and behavior against the local repository before making changes.
+
 **Parameters:**
 
 | Parameter | Type | Required | Description |
@@ -317,14 +327,14 @@ Enhance user prompts by combining codebase context and conversation history to g
 
 **How it behaves by default:**
 
-- The MCP tool first calls the prompt-enhancer API.
-- It then starts a small local Web UI and waits for the user to review, edit, and click **Send**.
-- While waiting for that confirmation, the MCP client may look like it has "stopped" after the tool call. This is expected: the tool is waiting for the browser step to finish.
+- In MCP server mode, `enhance_prompt` returns the API result directly when no prompt UI flags are supplied.
+- In one-shot CLI `enhance` / `--enhance-prompt` mode, the browser review flow remains the default.
+- If browser review is enabled for MCP calls, the client may look like it has "stopped" after the tool call while it waits for the Web UI confirmation.
 
 **If you want a fully in-terminal / non-browser flow:**
 
 - Start ace-tool-rs with `--no-webbrowser-enhance-prompt`.
-- In that mode, `enhance_prompt` returns the API result directly to the MCP client without opening a browser.
+- In that mode, `enhance_prompt` returns the API result directly without opening a browser.
 - This mode is usually the best fit for agent-style tools such as OpenCode when you want the enhanced prompt to flow straight back into the conversation.
 
 **Parameters:**
@@ -595,6 +605,7 @@ cargo clippy
 
 - Only processes the root `.gitignore` and `.aceignore` files (nested ignore files are not supported)
 - Requires network access to the indexing API
+- Indexing writes `.ace-tool/` and may update the project root `.gitignore`
 - Maximum file size: 128KB per file
 - Maximum batch size: 1MB per upload batch
 

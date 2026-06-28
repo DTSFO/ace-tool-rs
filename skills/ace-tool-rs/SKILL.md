@@ -44,6 +44,9 @@ Index a project:
 ace-tool-rs index --project-root "$PWD"
 ```
 
+The project root must already exist. Indexing a valid project writes local
+runtime state under `.ace-tool/` and may update the project root `.gitignore`.
+
 Search a project:
 
 ```bash
@@ -63,8 +66,12 @@ ace-tool-rs enhance \
 Run as an MCP server when an MCP client is configured:
 
 ```bash
-ace-tool-rs mcp --transport lsp
+ace-tool-rs mcp --transport lsp --no-webbrowser-enhance-prompt
 ```
+
+MCP server mode defaults `enhance_prompt` to direct no-browser responses when no
+prompt UI flags are supplied. Passing `--no-webbrowser-enhance-prompt` keeps MCP
+configs explicit and compatible with older installed versions.
 
 ## Query Guidance
 
@@ -80,9 +87,13 @@ Use exact search instead for symbols:
 rg "function_name"
 ```
 
+Treat semantic search snippets as locator hints. Before editing or citing exact
+implementation details, verify the relevant local source files with `rg`, `sed`,
+or the normal file-reading tools.
+
 ## Safety Rules
 
 - Do not print or commit tokens. Keep config files in user-owned secret storage.
 - Do not add real credentials to docs, examples, tests, task notes, or shell history files.
-- Treat `.ace-tool/` as local runtime state.
+- Treat `.ace-tool/` as local runtime state, not source-controlled content.
 - If `ace-tool-rs search` returns an error, report the exact error and fall back to ordinary repository inspection.

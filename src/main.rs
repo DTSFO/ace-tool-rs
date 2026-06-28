@@ -323,6 +323,7 @@ async fn run_mcp(
     prompt_ui_args: PromptUiArgs,
     transport: TransportArg,
 ) -> Result<()> {
+    let prompt_ui_args = mcp_prompt_ui_args(prompt_ui_args);
     let config = new_required_ace_config(&ace_args, &prompt_ui_args)?;
 
     info!("Starting ace-tool MCP server");
@@ -342,6 +343,8 @@ async fn run_index(
     project_root: PathBuf,
     print_summary: bool,
 ) -> Result<()> {
+    validate_project_root(&project_root)?;
+
     let config = new_required_ace_config(&ace_args, &PromptUiArgs::default())?;
 
     info!("Index mode: indexing project");
@@ -350,6 +353,31 @@ async fn run_index(
     let manager = IndexManager::new(config, project_root)?;
     let result = manager.index_project().await;
     handle_index_result(result, print_summary)
+}
+
+fn validate_project_root(project_root: &Path) -> Result<()> {
+    if !project_root.exists() {
+        return Err(anyhow!(
+            "project root does not exist: {}",
+            project_root.display()
+        ));
+    }
+
+    if !project_root.is_dir() {
+        return Err(anyhow!(
+            "project root is not a directory: {}",
+            project_root.display()
+        ));
+    }
+
+    Ok(())
+}
+
+fn mcp_prompt_ui_args(mut prompt_ui_args: PromptUiArgs) -> PromptUiArgs {
+    if !prompt_ui_args.has_values() {
+        prompt_ui_args.no_webbrowser_enhance_prompt = true;
+    }
+    prompt_ui_args
 }
 
 async fn run_search(ace_args: AceConfigArgs, project_root: PathBuf, query: String) -> Result<()> {
@@ -833,6 +861,57 @@ token = "config-token"
             args.legacy.ace.base_url.as_deref(),
             Some("https://api.example.com")
         );
+    }
+
+    #[test]
+    fn validate_project_root_rejects_missing_path_without_creating_it() {
+        let temp = TempDir::new().unwrap();
+        let missing = temp.path().join("missing-project");
+
+        let error = validate_project_root(&missing).unwrap_err();
+
+        assert!(error.to_string().contains("project root does not exist"));
+        assert!(!missing.exists());
+    }
+
+    #[test]
+    fn validate_project_root_rejects_file_path() {
+        let temp = TempDir::new().unwrap();
+        let file_path = temp.path().join("not-a-directory");
+        fs::write(&file_path, "content").unwrap();
+
+        let error = validate_project_root(&file_path).unwrap_err();
+
+        assert!(error
+            .to_string()
+            .contains("project root is not a directory"));
+    }
+
+    #[test]
+    fn validate_project_root_accepts_existing_directory() {
+        let temp = TempDir::new().unwrap();
+
+        validate_project_root(temp.path()).unwrap();
+    }
+
+    #[test]
+    fn mcp_defaults_to_no_browser_prompt_enhance_when_prompt_ui_unset() {
+        let args = mcp_prompt_ui_args(PromptUiArgs::default());
+
+        assert!(args.no_webbrowser_enhance_prompt);
+        assert!(!args.force_xdg_open);
+        assert!(args.webui_addr.is_none());
+    }
+
+    #[test]
+    fn mcp_preserves_explicit_prompt_ui_args() {
+        let args = mcp_prompt_ui_args(PromptUiArgs {
+            webui_addr: Some("127.0.0.1:0".to_string()),
+            ..PromptUiArgs::default()
+        });
+
+        assert!(!args.no_webbrowser_enhance_prompt);
+        assert_eq!(args.webui_addr.as_deref(), Some("127.0.0.1:0"));
     }
 
     #[test]
