@@ -70,3 +70,36 @@ Validated index project roots before side effects, made MCP prompt enhancement d
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: Validate CLI argument handling
+
+**Date**: 2026-06-28
+**Task**: Validate CLI argument handling
+**Branch**: `master`
+
+### Summary
+
+Rejected zero numeric CLI overrides at config construction, made explicit missing config paths fail fast, changed legacy index-only to print summaries, updated docs/spec/skill guidance, installed the release CLI and refreshed local skills.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6c0d9cb` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
