@@ -129,6 +129,7 @@ impl LegacyArgs {
 
 #[derive(Parser, Debug)]
 #[command(name = "ace-tool-rs")]
+#[command(version)]
 #[command(about = "CLI, skill installer, and MCP server for codebase semantic search")]
 struct Args {
     #[command(subcommand)]
@@ -652,6 +653,12 @@ mod tests {
         assert!(help.contains("search"));
         assert!(help.contains("enhance"));
         assert!(help.contains("install-skill"));
+    }
+
+    #[test]
+    fn command_reports_package_version() {
+        let command = Args::command();
+        assert_eq!(command.get_version(), Some(env!("CARGO_PKG_VERSION")));
     }
 
     #[test]
