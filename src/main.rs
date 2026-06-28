@@ -60,19 +60,19 @@ struct AceConfigArgs {
     #[arg(long)]
     token: Option<String>,
 
-    /// Maximum lines per blob (default: 800)
+    /// Positive maximum lines per blob (default: 800)
     #[arg(long)]
     max_lines_per_blob: Option<usize>,
 
-    /// Upload timeout in seconds (default: adaptive)
+    /// Positive upload timeout in seconds (default: adaptive)
     #[arg(long)]
     upload_timeout: Option<u64>,
 
-    /// Upload concurrency (default: adaptive)
+    /// Positive upload concurrency (default: adaptive)
     #[arg(long)]
     upload_concurrency: Option<usize>,
 
-    /// Retrieval timeout in seconds (default: 60)
+    /// Positive retrieval timeout in seconds (default: 60)
     #[arg(long)]
     retrieval_timeout: Option<u64>,
 
@@ -127,7 +127,7 @@ struct LegacyArgs {
     #[arg(long, value_enum, default_value = "auto")]
     transport: TransportArg,
 
-    /// Index-only mode: index current directory and exit (no MCP server)
+    /// Index-only mode: index current directory, print a summary, and exit
     #[arg(long, default_value = "false")]
     index_only: bool,
 
@@ -312,7 +312,7 @@ async fn run_legacy(args: LegacyArgs) -> Result<()> {
 
     if args.index_only {
         let project_root = env::current_dir()?;
-        return run_index(args.ace, project_root, false).await;
+        return run_index(args.ace, project_root, true).await;
     }
 
     run_mcp(args.ace, args.prompt_ui, args.transport).await
@@ -549,6 +549,14 @@ fn first_non_empty(values: [Option<String>; 3]) -> Option<String> {
 }
 
 fn load_file_config(config_path: Option<&Path>) -> Result<FileConfig> {
+    if let Some(path) = config_path {
+        if !path.exists() {
+            return Err(anyhow!("config file does not exist: {}", path.display()));
+        }
+
+        return read_file_config(path);
+    }
+
     let Some(path) = resolve_config_path(config_path)? else {
         return Ok(FileConfig::default());
     };
@@ -557,8 +565,12 @@ fn load_file_config(config_path: Option<&Path>) -> Result<FileConfig> {
         return Ok(FileConfig::default());
     }
 
+    read_file_config(&path)
+}
+
+fn read_file_config(path: &Path) -> Result<FileConfig> {
     let content =
-        fs::read_to_string(&path).with_context(|| format!("failed to read {}", path.display()))?;
+        fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))?;
     toml::from_str(&content).with_context(|| format!("failed to parse {}", path.display()))
 }
 
@@ -745,7 +757,10 @@ fn skill_target_dir(agent: AgentTarget, home: &Path) -> PathBuf {
 mod tests {
     use super::*;
     use clap::CommandFactory;
+    use std::sync::Mutex;
     use tempfile::TempDir;
+
+    static ENV_MUTEX: Mutex<()> = Mutex::new(());
 
     #[test]
     fn help_lists_new_subcommands() {
@@ -787,6 +802,35 @@ token = "config-token"
             Some("https://config.example.com/")
         );
         assert_eq!(credentials.token.as_deref(), Some("config-token"));
+    }
+
+    #[test]
+    fn explicit_missing_config_file_is_an_error() {
+        let temp = TempDir::new().unwrap();
+        let config_path = temp.path().join("missing.toml");
+
+        let error = load_file_config(Some(&config_path)).unwrap_err();
+
+        assert!(error.to_string().contains("config file does not exist"));
+        assert!(error.to_string().contains("missing.toml"));
+    }
+
+    #[test]
+    fn missing_default_config_file_falls_back_to_empty_config() {
+        let _guard = ENV_MUTEX.lock().unwrap();
+        let temp = TempDir::new().unwrap();
+        let old_xdg = env::var_os("XDG_CONFIG_HOME");
+
+        env::set_var("XDG_CONFIG_HOME", temp.path());
+        let config = load_file_config(None).unwrap();
+
+        match old_xdg {
+            Some(value) => env::set_var("XDG_CONFIG_HOME", value),
+            None => env::remove_var("XDG_CONFIG_HOME"),
+        }
+
+        assert!(config.base_url.is_none());
+        assert!(config.token.is_none());
     }
 
     #[test]

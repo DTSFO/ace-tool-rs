@@ -88,7 +88,9 @@ token = "your-token-here"
 
 The lookup order is: CLI flags, config file, then `ACE_BASE_URL` / `ACE_TOKEN`
 environment variables for backward compatibility. Use `--config <path>` to load
-a different config file.
+a different config file. When `--config` is provided explicitly, the file must
+exist; only the implicit default config path may be absent and fall back to
+environment variables.
 
 ### CLI Subcommands
 
@@ -125,16 +127,16 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 | `--base-url` | API base URL for the indexing service (optional for `--enhance-prompt` with third-party endpoints) |
 | `--token` | Authentication token for API access (optional for `--enhance-prompt` with third-party endpoints) |
 | `--transport` | Transport framing: `auto` (default), `lsp`, `line` |
-| `--upload-timeout` | Override upload timeout in seconds (disables adaptive timeout) |
-| `--upload-concurrency` | Override upload concurrency (disables adaptive concurrency) |
+| `--upload-timeout` | Positive upload timeout in seconds (disables adaptive timeout) |
+| `--upload-concurrency` | Positive upload concurrency (disables adaptive concurrency) |
 | `--no-adaptive` | Disable adaptive strategy, use static heuristic values |
 | `--no-webbrowser-enhance-prompt` | Disable web browser interaction for enhance_prompt, return API result directly |
 | `--force-xdg-open` | Force using xdg-open instead of explorer.exe in WSL environment |
 | `--webui-addr` | Bind address and port for the enhance_prompt Web UI server (e.g., `127.0.0.1:8754`, `0.0.0.0:3456`). If not specified, automatically selects an available port on 127.0.0.1. **Warning:** binding to a non-loopback address exposes the unauthenticated Web UI to the network |
-| `--index-only` | Index current directory and exit (no MCP server) |
+| `--index-only` | Index current directory, print a summary, and exit (no MCP server) |
 | `--enhance-prompt` | Enhance a prompt and output the result to stdout, then exit |
-| `--max-lines-per-blob` | Maximum lines per blob chunk (default: 800) |
-| `--retrieval-timeout` | Search retrieval timeout in seconds (default: 60) |
+| `--max-lines-per-blob` | Positive maximum lines per blob chunk (default: 800) |
+| `--retrieval-timeout` | Positive search retrieval timeout in seconds (default: 60) |
 
 Subcommand-specific arguments:
 

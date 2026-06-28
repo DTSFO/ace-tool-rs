@@ -89,6 +89,74 @@ fn test_config_with_custom_values() {
 }
 
 #[test]
+fn test_config_rejects_zero_max_lines_per_blob() {
+    let error = Config::new(
+        "https://api.example.com".to_string(),
+        "test-token".to_string(),
+        ConfigOptions {
+            max_lines_per_blob: Some(0),
+            ..Default::default()
+        },
+    )
+    .unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("--max-lines-per-blob must be greater than 0"));
+}
+
+#[test]
+fn test_config_rejects_zero_upload_timeout() {
+    let error = Config::new(
+        "https://api.example.com".to_string(),
+        "test-token".to_string(),
+        ConfigOptions {
+            upload_timeout: Some(0),
+            ..Default::default()
+        },
+    )
+    .unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("--upload-timeout must be greater than 0"));
+}
+
+#[test]
+fn test_config_rejects_zero_upload_concurrency() {
+    let error = Config::new(
+        "https://api.example.com".to_string(),
+        "test-token".to_string(),
+        ConfigOptions {
+            upload_concurrency: Some(0),
+            ..Default::default()
+        },
+    )
+    .unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("--upload-concurrency must be greater than 0"));
+}
+
+#[test]
+fn test_config_rejects_zero_retrieval_timeout() {
+    let error = Config::new(
+        "https://api.example.com".to_string(),
+        "test-token".to_string(),
+        ConfigOptions {
+            retrieval_timeout: Some(0),
+            ..Default::default()
+        },
+    )
+    .unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("--retrieval-timeout must be greater than 0"));
+}
+
+#[test]
 fn test_config_options_default() {
     let options = ConfigOptions::default();
     assert!(options.max_lines_per_blob.is_none());

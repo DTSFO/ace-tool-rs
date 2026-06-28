@@ -57,6 +57,11 @@ pub struct UploadStrategy {
 impl Config {
     /// Create a new Config with required base_url and token, plus optional settings
     pub fn new(base_url: String, token: String, options: ConfigOptions) -> Result<Arc<Self>> {
+        validate_positive_option("--max-lines-per-blob", options.max_lines_per_blob)?;
+        validate_positive_option("--upload-timeout", options.upload_timeout)?;
+        validate_positive_option("--upload-concurrency", options.upload_concurrency)?;
+        validate_positive_option("--retrieval-timeout", options.retrieval_timeout)?;
+
         // Ensure base_url uses https:// (using strip_prefix to avoid replacing http:// in path)
         let base_url = if let Some(rest) = base_url.strip_prefix("http://") {
             format!("https://{}", rest)
@@ -114,6 +119,17 @@ impl Config {
             exclude_patterns: default_exclude_patterns(),
         })
     }
+}
+
+fn validate_positive_option<T>(name: &str, value: Option<T>) -> Result<()>
+where
+    T: PartialEq + From<u8>,
+{
+    if value == Some(T::from(0)) {
+        return Err(anyhow!("{} must be greater than 0", name));
+    }
+
+    Ok(())
 }
 
 /// Get adaptive upload strategy based on blob count

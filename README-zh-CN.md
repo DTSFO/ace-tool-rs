@@ -87,6 +87,7 @@ token = "your-token-here"
 
 读取优先级是：CLI 参数、配置文件、最后为了兼容旧用法读取
 `ACE_BASE_URL` / `ACE_TOKEN` 环境变量。可以用 `--config <path>` 指定其他配置文件。
+显式传入 `--config` 时文件必须存在；只有隐式默认配置路径可以不存在，并继续回退到环境变量。
 
 ### CLI 子命令
 
@@ -123,16 +124,16 @@ ace-tool-rs --base-url <API_URL> --token <AUTH_TOKEN>
 | `--base-url` | 索引服务的 API 基础 URL（使用第三方端点的 `--enhance-prompt` 模式时可选） |
 | `--token` | API 访问的认证令牌（使用第三方端点的 `--enhance-prompt` 模式时可选） |
 | `--transport` | 传输帧格式：`auto`（默认）、`lsp`、`line` |
-| `--upload-timeout` | 覆盖上传超时时间（秒），禁用自适应超时 |
-| `--upload-concurrency` | 覆盖上传并发度，禁用自适应并发 |
+| `--upload-timeout` | 正整数上传超时时间（秒），禁用自适应超时 |
+| `--upload-concurrency` | 正整数上传并发度，禁用自适应并发 |
 | `--no-adaptive` | 禁用自适应策略，使用静态启发式值 |
 | `--no-webbrowser-enhance-prompt` | 禁用 enhance_prompt 的浏览器交互，直接返回 API 结果 |
 | `--force-xdg-open` | 在 WSL 环境中强制使用 xdg-open 代替 explorer.exe |
 | `--webui-addr` | enhance_prompt Web UI 服务器的绑定地址和端口（如 `127.0.0.1:8754`、`0.0.0.0:3456`）。未指定时自动在 127.0.0.1 上选择可用端口。**警告：** 绑定到非回环地址会将无认证的 Web UI 暴露到网络中 |
-| `--index-only` | 仅索引当前目录并退出（不启动 MCP 服务器） |
+| `--index-only` | 索引当前目录、打印摘要并退出（不启动 MCP 服务器） |
 | `--enhance-prompt` | 增强提示词并输出到标准输出，然后退出 |
-| `--max-lines-per-blob` | 每个 blob 块的最大行数（默认：800） |
-| `--retrieval-timeout` | 搜索检索超时时间（秒，默认：60） |
+| `--max-lines-per-blob` | 每个 blob 块的正整数最大行数（默认：800） |
+| `--retrieval-timeout` | 正整数搜索检索超时时间（秒，默认：60） |
 
 子命令参数：
 

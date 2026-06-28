@@ -24,6 +24,8 @@ ace-tool-rs search --project-root /path/to/project --query "Where is auth handle
 `index` requires an existing project directory. For valid projects it writes
 `.ace-tool/` and may update the root `.gitignore`. Treat semantic search output
 as locator guidance and verify exact implementation details in local files.
+Explicit `--config <path>` values must point to an existing TOML file, and
+numeric override flags such as `--upload-timeout` must be positive integers.
 
 ## Supported Platforms
 

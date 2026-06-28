@@ -36,7 +36,9 @@ The CLI normally reads ACE credentials from:
 ```
 
 Use `--base-url` and `--token` only when you need to override that config for a
-single command.
+single command. If you pass `--config <path>` explicitly, the file must exist;
+the implicit default config path is the only missing config path that falls back
+to environment variables.
 
 Index a project:
 
@@ -96,4 +98,6 @@ or the normal file-reading tools.
 - Do not print or commit tokens. Keep config files in user-owned secret storage.
 - Do not add real credentials to docs, examples, tests, task notes, or shell history files.
 - Treat `.ace-tool/` as local runtime state, not source-controlled content.
+- Pass positive integers for numeric overrides such as `--max-lines-per-blob`,
+  `--upload-timeout`, `--upload-concurrency`, and `--retrieval-timeout`.
 - If `ace-tool-rs search` returns an error, report the exact error and fall back to ordinary repository inspection.

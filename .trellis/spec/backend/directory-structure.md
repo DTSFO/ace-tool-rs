@@ -138,7 +138,7 @@ Keep packaging version fields aligned with `Cargo.toml` and README examples when
 ### 3. Contracts
 
 - MCP mode uses stdout only for JSON-RPC frames; all diagnostics stay on stderr through `tracing`.
-- `index` prints a human summary only for the subcommand path. Legacy `--index-only` preserves log-only stdout behavior.
+- `index` and legacy `--index-only` print a human summary on successful indexing.
 - `search` prints only tool search text to stdout and returns an error if the tool result begins with `Error:`.
 - `enhance` prints only the enhanced prompt to stdout.
 - `install-skill` copies the source skill directory into `~/.codex/skills/ace-tool-rs`, `~/.claude/skills/ace-tool-rs`, and `~/.pi/agent/skills/ace-tool-rs` for the selected agents.
@@ -150,6 +150,8 @@ Keep packaging version fields aligned with `Cargo.toml` and README examples when
 
 - Missing base URL in MCP, index, or search mode after CLI/config/env resolution -> base URL required error.
 - Missing token in MCP, index, or search mode after CLI/config/env resolution -> token required error.
+- Explicit `--config <path>` missing -> config file does not exist error; implicit default config path missing -> fallback to environment variables.
+- Numeric override flags must be positive when supplied: `--max-lines-per-blob`, `--upload-timeout`, `--upload-concurrency`, and `--retrieval-timeout`.
 - Malformed TOML config -> parse error including the config path, never the token value.
 - Third-party enhance mode with only one of `--base-url` / `--token` -> paired-argument error.
 - Subcommand plus legacy top-level flags -> reject; users must place options after the subcommand.
